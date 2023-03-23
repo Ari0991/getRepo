@@ -12,20 +12,23 @@ function createCard() {
   card.appendChild(cardCloseButton);
   card.classList.add("search__card");
   listContainer.appendChild(card);
+
+  const closeListener = cardCloseButton.addEventListener("click", function (e) {
+    cardCloseButton.parentElement.remove();
+  });
   return card;
 }
 
 async function searchRepo() {
-  return await fetch(
-    `https://api.github.com/search/repositories?q=${searchInput.value}&per_page=5&page=1`
-  )
+  const searchUrl = `https://api.github.com/search/repositories?q=${this.value}&per_page=5&page=1`;
+  return await fetch(searchUrl)
     .then((res) => {
       if (res.ok) {
         res.json().then((res) => {
-          let result = makeAnswer.call(this, res);
+          makeAnswer(res);
         });
       } else {
-        removeAnswer.call(this);
+        removeAnswer();
       }
     })
     .catch((err) => console.log(err));
@@ -39,12 +42,12 @@ const debounce = (fn, debounceTime) => {
   };
 };
 
-const debounseSearch = debounce(searchRepo, 1000);
+const debounceSearch = debounce(searchRepo, 1000);
 
-searchInput.addEventListener("keyup", debounseSearch);
+searchInput.addEventListener("input", debounceSearch);
 
 function makeAnswer(arr) {
-  removeAnswer.call(this);
+  removeAnswer();
   const repos = arr.items;
   repos.forEach((elem) => {
     let answer = document.createElement("li");
@@ -52,7 +55,7 @@ function makeAnswer(arr) {
     answer.textContent = elem.name;
     searchResult.appendChild(answer);
     answer.addEventListener("click", function () {
-      const newCard = createCard.call(this, elem);
+      const newCard = createCard(elem);
       const text = newCard.querySelector(".search__card-text");
       text.textContent = `name: ${elem.name} \r\n`;
       text.textContent += `owner: ${elem.owner.login} \r\n`;
@@ -60,19 +63,8 @@ function makeAnswer(arr) {
       removeAnswer();
     });
   });
-  return this;
 }
 
 function removeAnswer() {
   searchResult.textContent = "";
 }
-
-listContainer.addEventListener("click", function (e) {
-  const closeButtons = document.querySelectorAll(".search__card-button--close");
-
-  closeButtons.forEach((elem) => {
-    if (elem === e.target) {
-      elem.parentElement.remove();
-    }
-  });
-});
